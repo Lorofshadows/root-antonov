@@ -1,0 +1,12 @@
+{
+  "name": "telegram-user-info",
+  "version": "1.0.0",
+  "description": "Simple Telegram Mini App to show user info",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": ["telegram", "mini-app"],
+  "author": "Your Name",
+  "license": "MIT"
+}
