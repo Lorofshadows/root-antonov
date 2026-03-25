@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Star Roulette</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .app-container {
+            max-width: 480px;
+            width: 100%;
+            background: rgba(18, 25, 45, 0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 42px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+            overflow: hidden;
+            border: 1px solid rgba(255,215,0,0.25);
+        }
+
+        .main-content {
+            padding: 24px 20px 20px;
+        }
+
+        .balance-card {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            border: 1px solid rgba(255,215,0,0.4);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        .balance-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #ffecb3;
+            font-size: 1rem;
+        }
+        .balance-label img {
+            width: 28px;
+            height: 28px;
+            filter: drop-shadow(0 0 4px rgba(255,215,0,0.6));
+        }
+        .balance-amount {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFD966, #FFB347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .roulette-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0 20px;
+        }
+        .canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            width: 100%;
+            max-width: 340px;
+            height: auto;
+            background: #1e2a3a;
+            border-radius: 50%;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(255,215,0,0.3);
+        }
+        
+        .spin-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 30% 30%, #ffcd4a, #e6a017);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+            border: 2px solid rgba(255,245,180,0.9);
+        }
+        .spin-btn:active {
+            transform: translate(-50%, -50%) scale(0.96);
+        }
+        .spin-btn.disabled {
+            opacity: 0.9;
+            pointer-events: none;
+        }
+        .spin-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+        .spin-default {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .spin-text {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #2c2a24;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-shadow: 0 1px 0 rgba(255,255,200,0.8);
+        }
+        .spin-cost {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #2c2a24;
+        }
+        .spin-cost img {
+            width: 13px;
+            height: 13px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .win-modal {
+            background: linear-gradient(145deg, #1e2a3a, #0f1722);
+            border-radius: 48px;
+            padding: 32px 28px;
+            text-align: center;
+            max-width: 300px;
+            width: 80%;
+            border: 2px solid rgba(255,215,0,0.6);
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .win-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #FFD966;
+            margin-bottom: 20px;
+        }
+        .win-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .win-star {
+            width: 48px;
+            height: 48px;
+            filter: drop-shadow(0 0 8px gold);
+            animation: starGlow 0.5s ease;
+        }
+        @keyframes starGlow {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .win-amount {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #FFD966, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .win-text {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+        .win-ok-btn {
+            background: linear-gradient(135deg, #FFD966, #FFB347);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e2a2f;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .win-ok-btn:active {
+            transform: scale(0.96);
+        }
+
+        .bottom-nav {
+            background: rgba(10, 15, 28, 0.9);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,215,0,0.25);
+            border-radius: 34px;
+            margin: 12px 16px 16px 16px;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 40px;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+        .nav-item.active {
+            opacity: 1;
+            background: rgba(255,215,0,0.15);
+            box-shadow: inset 0 0 6px rgba(255,215,0,0.3);
+        }
+        .nav-item img {
+            width: 28px;
+            height: 28px;
+        }
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+        .nav-item.active span {
+            color: #FFD966;
+        }
+        .nav-item:active {
+            transform: scale(0.96);
+        }
+
+        @media (max-width: 450px) {
+            .spin-btn {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="main-content">
+        <div class="balance-card">
+            <div class="balance-label">
+                <img src="star.png" alt="star" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23FFD700%22%3E%3Cpath%20d%3D%22M12%2017.27L18.18%2021l-1.64-7.03L22%209.24l-7.19-.61L12%202%209.19%208.63%202%209.24l5.46%204.73L5.82%2021z%22%2F%3E%3C%2Fsvg%3E'">
+                <span>Мой баланс</span>
+            </div>
+            <div class="balance-amount" id="balanceAmount">1000</div>
+        </div>
+
+        <div class="roulette-wrapper">
+            <div class="canvas-container">
+                <canvas id="rouletteCanvas" width="600" height="600" style="width:100%; height:auto; max-width:340px; aspect-ratio:1/1"></canvas>
+                <div class="spin-btn" id="spinButton">
+                    <div class="spin-default" id="spinDefault">
+                        <div class="spin-text">КРУТИТЬ</div>
+                        <div class="spin-cost">
+                            <span>150</span>
+                            <img src="star.png" alt="★" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23FFD700%22%3E%3Cpath%20d%3D%22M12%2017.27L18.18%2021l-1.64-7.03L22%209.24l-7.19-.61L12%202%209.19%208.63%202%209.24l5.46%204.73L5.82%2021z%22%2F%3E%3C%2Fsvg%3E'">
+                        </div>
+                    </div>
+                    <img id="spinImg" src="spinbut.png" style="display: none; width: 100%; height: 100%; border-radius: 50%;" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="navRoulette">
+            <img src="rulet.png" alt="Рулетка" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23FFD966%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%20stroke%3D%22%23ffcc44%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M12%204L12%208M12%2016L12%2020M8%2012L4%2012M20%2012L16%2012%22%20stroke%3D%22%23ffcc44%22%20stroke-width%3D%221.5%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22%20fill%3D%22%23ffcc44%22%2F%3E%3C%2Fsvg%3E'">
+            <span>Рулетка</span>
+        </div>
+        <div class="nav-item" id="navTasks">
+            <img src="task.png" alt="Задания" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%2399aabb%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%20stroke%3D%22%2399aabb%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M8%208h8M8%2012h6M8%2016h4%22%20stroke%3D%22%2399aabb%22%20stroke-width%3D%221.5%22%2F%3E%3C%2Fsvg%3E'">
+            <span>Задания</span>
+        </div>
+        <div class="nav-item" id="navProfile">
+            <img src="profile.png" alt="Профиль" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%2399aabb%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%228%22%20r%3D%224%22%20stroke%3D%22%2399aabb%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M5%2020v-2a7%207%200%200%201%2014%200v2%22%20stroke%3D%22%2399aabb%22%20fill%3D%22none%22%2F%3E%3C%2Fsvg%3E'">
+            <span>Профиль</span>
+        </div>
+    </div>
+</div>
+
+<div id="winModal" class="modal-overlay">
+    <div class="win-modal">
+        <div class="win-title">ВЫИГРЫШ!</div>
+        <div class="win-content">
+            <img src="star.png" alt="★" class="win-star" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%23FFD700%22%3E%3Cpath%20d%3D%22M12%2017.27L18.18%2021l-1.64-7.03L22%209.24l-7.19-.61L12%202%209.19%208.63%202%209.24l5.46%204.73L5.82%2021z%22%2F%3E%3C%2Fsvg%3E'">
+            <span class="win-amount" id="winAmount">0</span>
+        </div>
+        <div class="win-text">звезд добавлено на счёт!</div>
+        <button class="win-ok-btn" id="winOkBtn">ОК</button>
+    </div>
+</div>
+
+<script>
+    (function(){
+        const SECTORS = [
+            { value: 10,  color: "#4A6FA5", label: "10" },
+            { value: 20,  color: "#6A4E9B", label: "20" },
+            { value: 50,  color: "#C44536", label: "50" },
+            { value: 100, color: "#E68A2E", label: "100" },
+            { value: 200, color: "#2C9A6E", label: "200" },
+            { value: 500, color: "#D4AF37", label: "500" },
+            { value: 1000, color: "#B22234", label: "1000" },
+            { value: 15,  color: "#3D7CA3", label: "15" },
+            { value: 30,  color: "#A569BD", label: "30" },
+            { value: 80,  color: "#E67E22", label: "80" },
+            { value: 150, color: "#16A085", label: "150" },
+            { value: 300, color: "#F39C12", label: "300" }
+        ];
+        
+        const SPIN_COST = 150;
+        let balance = 1000;
+        let isSpinning = false;
+        let currentAngle = 0;
+        let animationId = null;
+        let spinDuration = 2000;
+        
+        const canvas = document.getElementById('rouletteCanvas');
+        const ctx = canvas.getContext('2d');
+        const balanceSpan = document.getElementById('balanceAmount');
+        const spinBtn = document.getElementById('spinButton');
+        const spinDefault = document.getElementById('spinDefault');
+        const spinImg = document.getElementById('spinImg');
+        const winModal = document.getElementById('winModal');
+        const winAmountSpan = document.getElementById('winAmount');
+        const winOkBtn = document.getElementById('winOkBtn');
+        
+        const sectorCount = SECTORS.length;
+        const angleStep = (Math.PI * 2) / sectorCount;
+        
+        const starImg = new Image();
+        starImg.src = "star.png";
+        starImg.onerror = function() {
+            this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFD700"%3E%3Cpath d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"%3E%3C/path%3E%3C/svg%3E';
+        };
+        
+        function showWinModal(winValue) {
+            winAmountSpan.innerText = winValue;
+            winModal.classList.add('show');
+        }
+        
+        function hideWinModal() {
+            winModal.classList.remove('show');
+        }
+        
+        function drawRoulette() {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w/2;
+            const centerY = h/2;
+            const radius = w * 0.44;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            for (let i = 0; i < sectorCount; i++) {
+                const start = i * angleStep + currentAngle;
+                const end = (i+1) * angleStep + currentAngle;
+                const sector = SECTORS[i];
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, start, end);
+                ctx.closePath();
+                ctx.fillStyle = sector.color;
+                ctx.fill();
+                ctx.strokeStyle = "rgba(0,0,0,0.4)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                const midAngle = start + angleStep / 2;
+                const textDistance = radius * 0.68;
+                const x = centerX + Math.cos(midAngle) * textDistance;
+                const y = centerY + Math.sin(midAngle) * textDistance;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                
+                let textRotation = midAngle;
+                if (midAngle > Math.PI/2 && midAngle < 3*Math.PI/2) {
+                    textRotation = midAngle + Math.PI;
+                }
+                ctx.rotate(textRotation);
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                
+                const fontSize = Math.max(18, radius * 0.1);
+                const starSize = fontSize + 2;
+                const numberOffsetY = -12;
+                const starOffsetY = 12;
+                
+                ctx.font = `bold ${fontSize}px "Segoe UI", system-ui`;
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillText(sector.label, 0, numberOffsetY);
+                
+                if (starImg.complete && starImg.naturalWidth > 0) {
+                    ctx.drawImage(starImg, -starSize/2, starOffsetY - starSize/2, starSize, starSize);
+                } else {
+                    ctx.font = `${starSize}px "Segoe UI"`;
+                    ctx.fillStyle = "#FFD966";
+                    ctx.fillText("★", -starSize/2, starOffsetY + starSize/3);
+                }
+                
+                ctx.restore();
+            }
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.16, 0, Math.PI*2);
+            ctx.fillStyle = "#2C2E3A";
+            ctx.fill();
+            ctx.strokeStyle = "#FFD966";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX - 14, centerY - radius - 8);
+            ctx.lineTo(centerX, centerY - radius + 10);
+            ctx.lineTo(centerX + 14, centerY - radius - 8);
+            ctx.fillStyle = "#FFD966";
+            ctx.fill();
+        }
+        
+        function getCurrentSectorIndex() {
+            const markerAngle = -Math.PI / 2;
+            for (let i = 0; i < sectorCount; i++) {
+                let start = i * angleStep + currentAngle;
+                let end = (i+1) * angleStep + currentAngle;
+                let normStart = start % (2*Math.PI);
+                let normEnd = end % (2*Math.PI);
+                let normMarker = markerAngle % (2*Math.PI);
+                if (normStart < 0) normStart += 2*Math.PI;
+                if (normEnd < 0) normEnd += 2*Math.PI;
+                if (normMarker < 0) normMarker += 2*Math.PI;
+                
+                if (normStart < normEnd) {
+                    if (normMarker >= normStart && normMarker < normEnd) return i;
+                } else {
+                    if (normMarker >= normStart || normMarker < normEnd) return i;
+                }
+            }
+            return 0;
+        }
+        
+        function updateBalanceUI() {
+            balanceSpan.innerText = Math.floor(balance);
+        }
+        
+        function setSpinButtonState(isSpinningState) {
+            if (isSpinningState) {
+                spinDefault.style.display = 'none';
+                spinImg.style.display = 'block';
+                spinBtn.classList.add('disabled');
+            } else {
+                spinDefault.style.display = 'flex';
+                spinImg.style.display = 'none';
+                spinBtn.classList.remove('disabled');
+            }
+        }
+        
+        function startSpinAnimation(callback) {
+            if (isSpinning) return;
+            
+            const extraSpins = 12 + Math.random() * 6;
+            const randomSectorIndex = Math.floor(Math.random() * sectorCount);
+            
+            const targetSectorStartAngle = randomSectorIndex * angleStep;
+            let desiredAngle = (-Math.PI/2 - targetSectorStartAngle) % (2*Math.PI);
+            if (desiredAngle < 0) desiredAngle += 2*Math.PI;
+            let startAngleMod = currentAngle % (2*Math.PI);
+            let deltaNeeded = (desiredAngle - startAngleMod) % (2*Math.PI);
+            if (deltaNeeded < 0) deltaNeeded += 2*Math.PI;
+            const fullRotations = extraSpins * 2 * Math.PI;
+            const totalDelta = fullRotations + deltaNeeded;
+            
+            const startAngle = currentAngle;
+            const startTime = performance.now();
+            const duration = spinDuration;
+            
+            function animateSpin(now) {
+                const elapsed = now - startTime;
+                let t = Math.min(1, elapsed / duration);
+                // easeOutCubic - быстро в начале, плавное замедление в конце
+                const easeOut = 1 - Math.pow(1 - t, 3);
+                const newAngle = startAngle + totalDelta * easeOut;
+                currentAngle = newAngle % (Math.PI * 2);
+                drawRoulette();
+                if (t < 1) {
+                    animationId = requestAnimationFrame(animateSpin);
+                } else {
+                    currentAngle = (startAngle + totalDelta) % (Math.PI * 2);
+                    drawRoulette();
+                    isSpinning = false;
+                    animationId = null;
+                    const finalSectorIdx = getCurrentSectorIndex();
+                    const winValue = SECTORS[finalSectorIdx].value;
+                    if (callback) callback(winValue);
+                    setSpinButtonState(false);
+                }
+            }
+            isSpinning = true;
+            setSpinButtonState(true);
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animateSpin);
+        }
+        
+        function spinRoulette() {
+            if (isSpinning) return;
+            if (balance < SPIN_COST) return;
+            
+            balance -= SPIN_COST;
+            updateBalanceUI();
+            
+            startSpinAnimation((winValue) => {
+                balance += winValue;
+                updateBalanceUI();
+                showWinModal(winValue);
+            });
+        }
+        
+        function initNavButtons() {
+            const navRoulette = document.getElementById('navRoulette');
+            const navTasks = document.getElementById('navTasks');
+            const navProfile = document.getElementById('navProfile');
+            
+            navRoulette.classList.add('active');
+            
+            navRoulette.addEventListener('click', () => {});
+            navTasks.addEventListener('click', (e) => { e.preventDefault(); });
+            navProfile.addEventListener('click', (e) => { e.preventDefault(); });
+        }
+        
+        function bindSpin() {
+            spinBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                spinRoulette();
+            });
+        }
+        
+        winOkBtn.addEventListener('click', () => {
+            hideWinModal();
+        });
+        
+        winModal.addEventListener('click', (e) => {
+            if (e.target === winModal) {
+                hideWinModal();
+            }
+        });
+        
+        function init() {
+            canvas.width = 600;
+            canvas.height = 600;
+            starImg.onload = () => {
+                drawRoulette();
+            };
+            drawRoulette();
+            updateBalanceUI();
+            bindSpin();
+            initNavButtons();
+            
+            // предзагрузка картинки для кнопки
+            const preloadSpinImg = new Image();
+            preloadSpinImg.src = "spinbut.png";
+            preloadSpinImg.onload = () => {
+                spinImg.src = "spinbut.png";
+            };
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>
